@@ -127,7 +127,6 @@ OR                          {return OR;}
                                 }
 
 %%
-
 int yywrap( void ) {
         return 1;
 }
