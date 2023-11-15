@@ -650,7 +650,7 @@ char *yytext;
         #include <stdio.h>
         #include <stdlib.h>
         #include "LAB02.tab.h"
-        void yyerror(char *);
+        void yyerror(const char *s);
 
         char aux[100];
 #line 657 "lex.yy.c"

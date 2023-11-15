@@ -1,0 +1,15 @@
+
+
+
+Error sintactico en la linea numero: 1
+FROM
+
+
+
+Error sintactico en la linea numero: 1
+.
+
+
+
+Incorrecto 
+El archivo de entrada tiene 2 errores sintacticos. 

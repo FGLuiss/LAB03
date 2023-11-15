@@ -1,47 +1,54 @@
 %{
 
-#include <iostream>
-#include <vector>
+#include <stdio.h>
+#include <stdlib.h>
 
-using namespace std;
+extern int yylex();
+extern FILE *yyin;
+extern FILE *yyout;
+extern int yylineno;
+int linea;
+extern char *yytext;
 
-int yylex();
-int yyerror(const char* s);
-extern "C" FILE* yyin;
+int has_syntax_error = 0;
+int num_syntax_errors = 0;
 
-vector<int> line_errors;
-int numLinea = 1;
+void yyerror(const char *s);
 
 
 %}
+
 
 %token CREATE_TABLE DROP_TABLE INSERT INTO VALUES DELETE FROM UPDATE SET SELECT WHERE GROUP_BY 
 %token ORDER_BY ASC DESC AND OR MAX MIN AVG COUNT VARCHAR ENTERO DECIMAL CONST_CADENA IDENTIFICADOR
 %token LLAVE_A LLAVE_C PARENTESIS_A PARENTESIS_C CHAR_COMA CHAR_PUNTOYCOMA CHAR_ASTERISCO OP_IGUAL
 %token OP_COMP_IGUAL OP_DISTINTO OP_MENORIGUAL OP_MAYORIGUAL OP_MENOR OP_MAYOR OP_NEGACION OP_SUMA
 %token OP_DIV OP_RESTA INTEGER
+%start program
 
 %%
 
+program: declaracion
+        ;
 
 declaracion: tipo declaracion
-            | /* epsilon */
-           ;
+        | /* epsilon */
+        ;
 
-tipo: create_table { numLinea++; }
-    | drop_table { numLinea++; }
-    | insert { numLinea++; }
-    | delete { numLinea++; }
-    | update { numLinea++; }
-    | select { numLinea++; }
-    | error { line_errors.push_back(numLinea++); }
+tipo: create_table
+    | drop_table
+    | insert 
+    | delete
+    | update 
+    | select 
+    | error 
     ;
 
 create_table: CREATE_TABLE IDENTIFICADOR PARENTESIS_A columnas PARENTESIS_C CHAR_PUNTOYCOMA
             ;
 
-columnas: columnas CHAR_COMA IDENTIFICADOR tipo_dato PARENTESIS_A ENTERO PARENTESIS_C
-        | IDENTIFICADOR tipo_dato PARENTESIS_A ENTERO PARENTESIS_C
+columnas: columnas CHAR_COMA IDENTIFICADOR tipo_dato
+        | IDENTIFICADOR tipo_dato
         ;
 
 tipo_dato: INTEGER
@@ -52,7 +59,11 @@ tipo_dato: INTEGER
 drop_table: DROP_TABLE IDENTIFICADOR CHAR_PUNTOYCOMA
         ;
 
-insert: INSERT INTO IDENTIFICADOR PARENTESIS_A columnas PARENTESIS_C VALUES PARENTESIS_A valores PARENTESIS_C CHAR_PUNTOYCOMA
+insert: INSERT INTO IDENTIFICADOR algo VALUES PARENTESIS_A valores PARENTESIS_C CHAR_PUNTOYCOMA
+    ;
+
+algo: PARENTESIS_A columnas PARENTESIS_C
+    | /* epsilon */
     ;
 
 valores: valores CHAR_COMA valor
@@ -118,34 +129,37 @@ condicion: IDENTIFICADOR OP_IGUAL valor
 
 %%
 
-int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        cerr << "Uso: " << argv[0] << " archivo.txt\n";
-        return 1;
-    }
-
-    yyin = fopen(argv[1], "r");
-    if (!yyin) {
-        cerr << "No se pudo abrir el archivo " << argv[1] << endl;
-        return 1;
-    }
-
-    yyparse();
-    fclose(yyin);
-
-    if (line_errors.size() > 0) {
-        cout << "Incorrecto\n";
-        for (int linea : line_errors) {
-            cout << endl << "Error en la linea " << linea;
-        }
-        line_errors.clear();
-    } else {
-        cout << "Correcto\n";
-    }
-
-    return 0;
+void yyerror(const char *s) {
+    fprintf(yyout, "\nError sintactico en la linea numero: %d", yylineno);
+    fprintf(yyout, "\n%s\n", yytext);  // Imprime el texto que causó el error
+    num_syntax_errors++;
 }
 
-int yyerror(const char* mensaje) {
-    return 1;
+int main(int argc, char *argv[]){    
+    if (argc==2) {
+        yyin = fopen(argv[1], "r");
+        yyout = fopen("salida.txt", "w");
+        
+        if (yyin == NULL) {
+            printf("No se pudo abrir el archivo %s \n", argv[1]);
+            exit(-1);
+        }else{            
+                           
+            yyparse(); 
+
+            
+            if(num_syntax_errors == 0 ){
+                fprintf(yyout, "Correcto");
+                
+            }else{
+                fprintf(yyout, "\nIncorrecto \nEl archivo de entrada tiene %d errores sintacticos. \n",num_syntax_errors);
+                
+            }
+        }
+    }else{
+        printf("Debe escribir el nombre del archivo que quiere analizar");
+        exit(-1);
+
+    }
+    
 }
